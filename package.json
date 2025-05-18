@@ -13,6 +13,7 @@
     "@aws-sdk/s3-request-presigner": "^3.810.0",
     "@vicons/ionicons5": "^0.13.0",
     "core-js": "^3.8.3",
+    "exifreader": "^4.30.1",
     "vue": "^3.2.13"
   },
   "devDependencies": {

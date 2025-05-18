@@ -48,15 +48,40 @@
       </n-space>
     </n-image-group>
   </div>
+  <n-modal v-model:show="showModal">
+    <n-card
+      style="width: 1200px"
+      title="Meta Data"
+      :bordered="false"
+      size="huge"
+      role="dialog"
+      aria-modal="true"
+    >
+      <template #header-extra>
+        -- Creation parameters --
+      </template>
+      <template v-for="data in currentMetaData">
+        <n-space justify="end">
+          <n-button :render-icon="renderIcon" @click="clickCopy(data)">
+            copy
+          </n-button>
+        </n-space>
+        <p  style="white-space: pre-line;">{{ data }}</p>
+      </template>
+      <template #footer>
+      </template>
+    </n-card>
+  </n-modal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, h } from "vue"
 import type { ImageRenderToolbarProps } from "naive-ui"
-import { CloudDownloadOutline, ConstructOutline } from "@vicons/ionicons5"
-import { NButton, useMessage } from "naive-ui"
+import { CloudDownloadOutline, ConstructOutline, CopyOutline } from "@vicons/ionicons5"
+import { NButton, useMessage, NIcon } from "naive-ui"
 
 import { generatePresignedUrl, listImageKeys, validatePass } from "../services/aws-s3"
+import { getMetaData } from "../services/image-meta"
 
 
 const myBucket = import.meta.env.VITE_AWS_BUCKET
@@ -66,6 +91,7 @@ const myBucket = import.meta.env.VITE_AWS_BUCKET
 type ImageData = {
   urlKey: string
   previewUrl: string
+  metaData: string[]
 }
 
 const timestamp = ref<number>()
@@ -79,6 +105,8 @@ const folderOptions = ref(["img2img-grids", "img2img-images", "txt2img-grids", "
 ))
 const imagesData = ref<ImageData[]>([])
 const currentImageIndex = ref<number>(0)
+const showModal = ref<boolean>(false)
+const currentMetaData = ref<string[]>([])
 const message = useMessage()
 
 const renderToolbar = ({ nodes }: ImageRenderToolbarProps) => {
@@ -111,8 +139,7 @@ const renderToolbar = ({ nodes }: ImageRenderToolbarProps) => {
         type: "primary",
         style: { marginLeft: "12px" },
         onClick: async () => {
-          await navigator.clipboard.writeText("url.value")
-          message.success("Copied to clipboard")
+          viewMetaData(currentImageIndex.value)
         }
       },
       {
@@ -122,8 +149,15 @@ const renderToolbar = ({ nodes }: ImageRenderToolbarProps) => {
     nodes.close,
   ]
 }
+const renderIcon = () => {
+  return h(NIcon, null, {
+    default: () => h(CopyOutline)
+  })
+}
 
-
+const clickCopy = (text: string) => {
+  navigator.clipboard.writeText(text)
+}
 
 const fetchImageUrls = async (date: string, folder: string) => {
   imagesData.value = []
@@ -137,20 +171,24 @@ const fetchImageUrls = async (date: string, folder: string) => {
   message.success("File exist.")
 
   for (const key of keys) {
-    if (typeof key === "string" && /\.jpg$/.test(key)) {
-      const previewUrl = await generatePresignedUrl(myBucket, key)
+    if (typeof key === "string" && /\.png$/.test(key)) {
+
+      var previewUrlKey = key.replace(".png", ".jpg")
+      if (!keys.includes(previewUrlKey)) {
+        previewUrlKey = key
+      }
+
+      const previewUrl = await generatePresignedUrl(myBucket, previewUrlKey)
       if (typeof previewUrl !== "string") {
         continue
       }
 
-      var urlKey = key.replace(".jpg", ".png")
-      if (!keys.includes(urlKey)) {
-        urlKey = ""
-      }
+      const metaData = await getMetaData(previewUrl)
 
       imagesData.value.push({
-        urlKey: urlKey,
-        previewUrl: previewUrl
+        urlKey: key,
+        previewUrl: previewUrl,
+        metaData: metaData
       })
     }
   }
@@ -190,9 +228,12 @@ const correctIndex = (index: number, listLength: number): number => {
 }
 const goToPrev = () => {
   currentImageIndex.value = correctIndex(currentImageIndex.value - 1, imagesData.value.length)
+  currentMetaData.value = imagesData.value[currentImageIndex.value].metaData
 }
 const goToNext = () => {
   currentImageIndex.value = correctIndex(currentImageIndex.value + 1, imagesData.value.length)
+  currentMetaData.value = imagesData.value[currentImageIndex.value].metaData
+
 }
 
 
@@ -200,10 +241,8 @@ const clickDownloadImage = async (index: number) => {
   message.info("Start image download...")
 
   const key = imagesData.value[index].urlKey
-  const url = await generatePresignedUrl(myBucket, key)  
+  const url = await generatePresignedUrl(myBucket, key)
   const filename = key.split("/").pop() || ""
-
-  console.log(url, filename)
 
   await downloadImage(url, filename)
 
@@ -222,6 +261,11 @@ const downloadImage = async (url: string, filename: string) => {
   a.click()
   document.body.removeChild(a)
   window.URL.revokeObjectURL(blobUrl)
+}
+
+const viewMetaData = (index: number) => {
+  showModal.value = true
+  currentMetaData.value = imagesData.value[index].metaData
 }
 
 </script>
