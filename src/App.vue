@@ -1,11 +1,10 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
-  <ImageView />
+  <n-message-provider>
+    <ImageView />
+  </n-message-provider>
 </template>
 
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
 import ImageView from './components/ImageView.vue'
 </script>
 
