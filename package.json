@@ -11,6 +11,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.810.0",
     "@aws-sdk/s3-request-presigner": "^3.810.0",
+    "@vicons/ionicons5": "^0.13.0",
     "core-js": "^3.8.3",
     "vue": "^3.2.13"
   },
@@ -27,6 +28,7 @@
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
     "naive-ui": "^2.41.0",
+    "sass": "^1.89.0",
     "typescript": "^5.8.3",
     "vfonts": "^0.0.3",
     "vite": "^6.3.5",
