@@ -2,14 +2,14 @@
   <div id="searchForm">
     <n-form>
       <n-grid :span="24" :x-gap="24">
-        <n-form-item-gi :span="6" label="Username" path="username">
+        <n-form-item-gi :span="4" label="Username" path="username">
           <n-input
             type="text"
             @keydown.enter.prevent
             :input-props="{ name: 'username', autocomplete: 'username', style: 'display:none;' }"
           />
         </n-form-item-gi>
-        <n-form-item-gi :span="6" label="Password" path="password">
+        <n-form-item-gi :span="4" label="Password" path="password">
           <n-input
             v-model:value="password"
             type="password"
@@ -17,15 +17,25 @@
             :input-props="{ name: 'password', autocomplete: 'current-password' }"
           />
         </n-form-item-gi>
-        <n-form-item-gi :span="4" label="Date" path="date">
+        <n-form-item-gi :span="2" label="Date" path="date">
           <n-date-picker v-model:value="timestamp" type="date" />
         </n-form-item-gi>
-        <n-form-item-gi :span="6" label="Folder" path="selectValue">
+        <n-form-item-gi :span="4" label="Folder" path="selectValue">
           <n-select
             v-model:value="selectFolder"
             placeholder="Select Folder"
             :options="folderOptions"
           />
+        </n-form-item-gi>
+        <n-form-item-gi :span="2" label="Update" path="update">
+          <n-button round ghost color="#8a2be2" @click="clickUpdateImage">
+            <template #icon>
+              <n-icon>
+                <RefreshOutline />
+              </n-icon>
+            </template>
+            Update
+          </n-button>
         </n-form-item-gi>
       </n-grid>
     </n-form>
@@ -62,7 +72,12 @@
       </template>
       <template v-for="data in currentMetaData">
         <n-space justify="end">
-          <n-button :render-icon="renderIcon" @click="clickCopy(data)">
+          <n-button @click="clickCopy(data)">
+            <template #icon>
+              <n-icon>
+                <CopyOutline />
+              </n-icon>
+            </template>
             copy
           </n-button>
         </n-space>
@@ -77,7 +92,7 @@
 <script setup lang="ts">
 import { ref, watch, h } from "vue"
 import type { ImageRenderToolbarProps } from "naive-ui"
-import { CloudDownloadOutline, ConstructOutline, CopyOutline } from "@vicons/ionicons5"
+import { CloudDownloadOutline, ConstructOutline, CopyOutline, RefreshOutline } from "@vicons/ionicons5"
 import { NButton, useMessage, NIcon } from "naive-ui"
 
 import { generatePresignedUrl, listImageKeys, validatePass } from "../services/aws-s3"
@@ -94,7 +109,7 @@ type ImageData = {
   metaData: string[]
 }
 
-const timestamp = ref<number>()
+const timestamp = ref<number>(Date.now())
 const selectFolder = ref<string>()
 const password = ref<string>("")
 const folderOptions = ref(["img2img-grids", "img2img-images", "txt2img-grids", "txt2img-images", "extras-images"].map(
@@ -149,29 +164,26 @@ const renderToolbar = ({ nodes }: ImageRenderToolbarProps) => {
     nodes.close,
   ]
 }
-const renderIcon = () => {
-  return h(NIcon, null, {
-    default: () => h(CopyOutline)
-  })
-}
 
 const clickCopy = (text: string) => {
   navigator.clipboard.writeText(text)
 }
 
 const fetchImageUrls = async (date: string, folder: string) => {
-  imagesData.value = []
-
   const keys = await listImageKeys(myBucket, `outputs/${folder}/${date}/`)
 
   if (keys.length === 0) {
-    message.warning("File not exist.")
+    message.warning("Image not found.")
     return
   }
-  message.success("File exist.")
+  message.success("Fetching images... Please wait a moment.")
 
   for (const key of keys) {
     if (typeof key === "string" && /\.png$/.test(key)) {
+
+      if (imagesData.value.some(image => image.urlKey === key)) {
+        continue
+      }
 
       var previewUrlKey = key.replace(".png", ".jpg")
       if (!keys.includes(previewUrlKey)) {
@@ -191,6 +203,18 @@ const fetchImageUrls = async (date: string, folder: string) => {
         metaData: metaData
       })
     }
+  }
+}
+
+const clickUpdateImage = () => {
+  if (imagesData.value.length === 0) {
+    return
+  }
+
+  const date = timestamp_to_date(timestamp.value)
+
+  if (date && selectFolder.value) {
+    fetchImageUrls(date, selectFolder.value)
   }
 }
 
@@ -215,6 +239,7 @@ watch([timestamp, selectFolder], ([newTimestamp, newFolder], [oldTimestamp, oldF
   const date = timestamp_to_date(newTimestamp as number)
 
   if (date && newFolder) {
+    imagesData.value = []
     fetchImageUrls(date, newFolder)
   }
 })
@@ -235,7 +260,6 @@ const goToNext = () => {
   currentMetaData.value = imagesData.value[currentImageIndex.value].metaData
 
 }
-
 
 const clickDownloadImage = async (index: number) => {
   message.info("Start image download...")
