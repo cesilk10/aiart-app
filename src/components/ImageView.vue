@@ -17,7 +17,7 @@
             :input-props="{ name: 'password', autocomplete: 'current-password' }"
           />
         </n-form-item-gi>
-        <n-form-item-gi :span="2" label="Date" path="date">
+        <n-form-item-gi :span="3" label="Date" path="date">
           <n-date-picker v-model:value="timestamp" type="date" />
         </n-form-item-gi>
         <n-form-item-gi :span="4" label="Folder" path="selectValue">
