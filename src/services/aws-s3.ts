@@ -32,7 +32,14 @@ export const listImageKeys = async (bucket: string, prefix: string) => {
   })
 
   const result = await s3.send(command)
-  return result.Contents?.map(item => item.Key) ?? []
+  const contents = result.Contents ?? []
+
+  contents.sort((a, b) => {
+    if (!a.LastModified || !b.LastModified) return 0
+    return a.LastModified.getTime() - b.LastModified.getTime()
+  })
+
+  return contents.map(item => item.Key)
 }
 
 export const validatePass = (password: string) => {
