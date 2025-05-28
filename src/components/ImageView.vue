@@ -20,13 +20,6 @@
         <n-form-item-gi :span="3" label="Date" path="date">
           <n-date-picker v-model:value="timestamp" type="date" />
         </n-form-item-gi>
-        <n-form-item-gi :span="4" label="Folder" path="selectValue">
-          <n-select
-            v-model:value="selectFolder"
-            placeholder="Select Folder"
-            :options="folderOptions"
-          />
-        </n-form-item-gi>
         <n-form-item-gi :span="2" label="Update" path="update">
           <n-button round ghost color="#8a2be2" @click="clickUpdateImage">
             <template #icon>
@@ -110,14 +103,7 @@ type ImageData = {
 }
 
 const timestamp = ref<number>(Date.now())
-const selectFolder = ref<string>()
 const password = ref<string>("")
-const folderOptions = ref(["img2img-grids", "img2img-images", "txt2img-grids", "txt2img-images", "extras-images"].map(
-  v => ({
-    label: v,
-    value: v
-  })
-))
 const imagesData = ref<ImageData[]>([])
 const currentImageIndex = ref<number>(0)
 const showModal = ref<boolean>(false)
@@ -169,8 +155,8 @@ const clickCopy = (text: string) => {
   navigator.clipboard.writeText(text)
 }
 
-const fetchImageUrls = async (date: string, folder: string) => {
-  const keys = await listImageKeys(myBucket, `outputs/${folder}/${date}/`)
+const fetchImageUrls = async (date: string, addToStart: boolean = false) => {
+  const keys = await listImageKeys(myBucket, `outputs/${date}/`)
 
   if (keys.length === 0) {
     message.warning("Image not found.")
@@ -179,31 +165,52 @@ const fetchImageUrls = async (date: string, folder: string) => {
   message.success("Fetching images... Please wait a moment.")
 
   for (const key of keys) {
-    if (typeof key === "string" && /\.png$/.test(key)) {
+    if (typeof key === "string") {
 
-      if (imagesData.value.some(image => image.urlKey === key)) {
+      const fileBaseName = getFileBaseName(key)
+      if (imagesData.value.some(image => getFileBaseName(image.urlKey) === fileBaseName)) {
         continue
       }
 
-      var previewUrlKey = key.replace(".png", ".jpg")
-      if (!keys.includes(previewUrlKey)) {
+      const filenameJpg = fileBaseName + ".jpg"
+      const filenamePng = fileBaseName + ".png"
+      var urlKey
+      var previewUrlKey
+      if (keys.includes(filenameJpg) && keys.includes(filenamePng)) {
+        urlKey = filenamePng
+        previewUrlKey = filenameJpg
+      } else {
+        urlKey = key
         previewUrlKey = key
       }
 
-      const previewUrl = await generatePresignedUrl(myBucket, previewUrlKey)
-      if (typeof previewUrl !== "string") {
+      const presignedUrl = await generatePresignedUrl(myBucket, previewUrlKey)
+      if (typeof presignedUrl !== "string") {
         continue
       }
 
-      const metaData = await getMetaData(previewUrl)
+      const metaData = await getMetaData(presignedUrl)
 
-      imagesData.value.push({
-        urlKey: key,
-        previewUrl: previewUrl,
-        metaData: metaData
-      })
+      if (addToStart) {
+        imagesData.value.unshift({
+          urlKey: urlKey,
+          previewUrl: presignedUrl,
+          metaData: metaData
+        })
+      } else {
+        imagesData.value.push({
+          urlKey: urlKey,
+          previewUrl: presignedUrl,
+          metaData: metaData
+        })
+      }
     }
   }
+}
+
+const getFileBaseName = (key: string) => {
+  const dotIndex = key.lastIndexOf(".")
+  return dotIndex !== -1 ? key.slice(0, dotIndex) : key
 }
 
 const clickUpdateImage = () => {
@@ -213,8 +220,8 @@ const clickUpdateImage = () => {
 
   const date = timestamp_to_date(timestamp.value)
 
-  if (date && selectFolder.value) {
-    fetchImageUrls(date, selectFolder.value)
+  if (date) {
+    fetchImageUrls(date, true)
   }
 }
 
@@ -230,7 +237,7 @@ const timestamp_to_date = (timestamp: number) => {
   return formattedDate
 }
 
-watch([timestamp, selectFolder], ([newTimestamp, newFolder], [oldTimestamp, oldFolder]) => {
+watch([timestamp], ([newTimestamp], [oldTimestamp]) => {
   if (!validatePass(password.value)) {
     message.error("Incorrect Password!!!")
     return
@@ -238,9 +245,9 @@ watch([timestamp, selectFolder], ([newTimestamp, newFolder], [oldTimestamp, oldF
 
   const date = timestamp_to_date(newTimestamp as number)
 
-  if (date && newFolder) {
+  if (date) {
     imagesData.value = []
-    fetchImageUrls(date, newFolder)
+    fetchImageUrls(date)
   }
 })
 
@@ -258,7 +265,6 @@ const goToPrev = () => {
 const goToNext = () => {
   currentImageIndex.value = correctIndex(currentImageIndex.value + 1, imagesData.value.length)
   currentMetaData.value = imagesData.value[currentImageIndex.value].metaData
-
 }
 
 const clickDownloadImage = async (index: number) => {

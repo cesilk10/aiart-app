@@ -34,9 +34,10 @@ export const listImageKeys = async (bucket: string, prefix: string) => {
   const result = await s3.send(command)
   const contents = result.Contents ?? []
 
+  // sort desc
   contents.sort((a, b) => {
     if (!a.LastModified || !b.LastModified) return 0
-    return a.LastModified.getTime() - b.LastModified.getTime()
+    return b.LastModified.getTime() - a.LastModified.getTime()
   })
 
   return contents.map(item => item.Key)

@@ -7,7 +7,12 @@ export const getMetaData = async (imageUrl: string) => {
   const arrayBuffer = await response.arrayBuffer()
 
   // ExifReader は ArrayBuffer をそのまま読み込み可能
-  const tags = ExifReader.load(arrayBuffer)
+  var tags
+  try {
+    tags = ExifReader.load(arrayBuffer)
+  } catch {
+    return ["", "", ""]
+  }
   var parameter
 
   if (/\.jpg/.test(imageUrl)) {
