@@ -83,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, h } from "vue"
+import { ref, watch, h, onMounted } from "vue"
 import type { ImageRenderToolbarProps } from "naive-ui"
 import { CloudDownloadOutline, ConstructOutline, CopyOutline, RefreshOutline } from "@vicons/ionicons5"
 import { NButton, useMessage, NIcon } from "naive-ui"
@@ -236,6 +236,10 @@ const timestamp_to_date = (timestamp: number) => {
 
   return formattedDate
 }
+
+onMounted(() => {
+  fetchImageUrls(timestamp_to_date(Date.now()))
+})
 
 watch([timestamp], ([newTimestamp], [oldTimestamp]) => {
   if (!validatePass(password.value)) {
