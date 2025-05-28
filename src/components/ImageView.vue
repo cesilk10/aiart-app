@@ -155,8 +155,8 @@ const clickCopy = (text: string) => {
   navigator.clipboard.writeText(text)
 }
 
-const fetchImageUrls = async (date: string, addToStart: boolean = false) => {
-  const keys = await listImageKeys(myBucket, `outputs/${date}/`)
+const fetchImageUrls = async (date: string, asc: boolean = false) => {
+  const keys = await listImageKeys(myBucket, `outputs/${date}/`, asc)
 
   if (keys.length === 0) {
     message.warning("Image not found.")
@@ -191,7 +191,7 @@ const fetchImageUrls = async (date: string, addToStart: boolean = false) => {
 
       const metaData = await getMetaData(presignedUrl)
 
-      if (addToStart) {
+      if (asc) {
         imagesData.value.unshift({
           urlKey: urlKey,
           previewUrl: presignedUrl,

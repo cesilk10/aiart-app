@@ -25,7 +25,7 @@ export const generatePresignedUrl = async (bucket: string, key: string): Promise
 }
 
 // 画像URLをリストで取得
-export const listImageKeys = async (bucket: string, prefix: string) => {
+export const listImageKeys = async (bucket: string, prefix: string, asc: boolean) => {
   const command = new ListObjectsV2Command({
     Bucket: bucket,
     Prefix: prefix,
@@ -37,7 +37,11 @@ export const listImageKeys = async (bucket: string, prefix: string) => {
   // sort desc
   contents.sort((a, b) => {
     if (!a.LastModified || !b.LastModified) return 0
-    return b.LastModified.getTime() - a.LastModified.getTime()
+    if (asc) {
+      return a.LastModified.getTime() - b.LastModified.getTime()
+    } else {
+      return b.LastModified.getTime() - a.LastModified.getTime()
+    }
   })
 
   return contents.map(item => item.Key)
