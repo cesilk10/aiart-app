@@ -13,7 +13,7 @@ export const getMetaData = async (imageUrl: string) => {
   } catch {
     return ["", "", ""]
   }
-  var parameter
+  var parameter = ""
 
   if (/\.jpg/.test(imageUrl)) {
     const userCommentValue = tags["UserComment"]?.value
@@ -23,9 +23,15 @@ export const getMetaData = async (imageUrl: string) => {
     parameter = tags["parameters"]?.value
   }
 
-  parameter = parameter.replace("Negative prompt:", "@@@@@Negative prompt:")
+  parameter = parameter.replace("Negative prompt:", "@@@@@")
   parameter = parameter.replace("Steps:", "@@@@@Steps:")
   const parameters = parameter.split("@@@@@")
+
+  parameters.forEach((parameter, index) => {
+    if (parameter.startsWith("Steps")) {
+      parameters[index] = parameter.replace(/, /g, "\n")
+    }
+  })
 
   return parameters
 }

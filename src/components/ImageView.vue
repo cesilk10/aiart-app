@@ -51,9 +51,9 @@
       </n-space>
     </n-image-group>
   </div>
-  <n-modal v-model:show="showModal">
+  <n-modal v-model:show="showModal" :on-after-enter="handleAfterModalOpen">
     <n-card
-      style="width: 1200px"
+      style="width: 30%; position: relative; left: 34%;"
       title="Meta Data"
       :bordered="false"
       size="huge"
@@ -61,7 +61,6 @@
       aria-modal="true"
     >
       <template #header-extra>
-        -- Creation parameters --
       </template>
       <template v-for="data in currentMetaData">
         <n-space justify="end">
@@ -74,7 +73,7 @@
             copy
           </n-button>
         </n-space>
-        <p  style="white-space: pre-line;">{{ data }}</p>
+        <p class="meta-data" style="white-space: pre-line;">{{ data }}</p>
       </template>
       <template #footer>
       </template>
@@ -83,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, h, onMounted } from "vue"
+import { ref, watch, h, onMounted, nextTick } from "vue"
 import type { ImageRenderToolbarProps } from "naive-ui"
 import { CloudDownloadOutline, ConstructOutline, CopyOutline, RefreshOutline } from "@vicons/ionicons5"
 import { NButton, useMessage, NIcon } from "naive-ui"
@@ -109,6 +108,14 @@ const currentImageIndex = ref<number>(0)
 const showModal = ref<boolean>(false)
 const currentMetaData = ref<string[]>([])
 const message = useMessage()
+
+const highlights = [
+  { key: "Model:", className: "highlight-model" },
+  { key: "VAE:", className: "highlight-vae" },
+  { key: "CFG scale:", className: "highlight-sfgs" },
+  { key: "Steps:", className: "highlight-steps" },
+  { key: "Denoising strength:", className: "highlight-denois" }
+]
 
 const renderToolbar = ({ nodes }: ImageRenderToolbarProps) => {
   return [
@@ -265,10 +272,12 @@ const correctIndex = (index: number, listLength: number): number => {
 const goToPrev = () => {
   currentImageIndex.value = correctIndex(currentImageIndex.value - 1, imagesData.value.length)
   currentMetaData.value = imagesData.value[currentImageIndex.value].metaData
+  highlightMetaData()
 }
 const goToNext = () => {
   currentImageIndex.value = correctIndex(currentImageIndex.value + 1, imagesData.value.length)
   currentMetaData.value = imagesData.value[currentImageIndex.value].metaData
+  highlightMetaData()
 }
 
 const clickDownloadImage = async (index: number) => {
@@ -302,6 +311,37 @@ const viewMetaData = (index: number) => {
   currentMetaData.value = imagesData.value[index].metaData
 }
 
+const handleAfterModalOpen = async () => {
+  await nextTick()
+  const mask = document.querySelector(".n-modal-mask") as HTMLElement
+  // モーダル下の画像にmaskをかけないように
+  if (mask) {
+    mask.style.backgroundColor = "rgba(0, 0, 0, 0)"
+  }
+  highlightMetaData()
+}
+
+const highlightMetaData = async () => {
+  await nextTick()
+  const metaParagraphs = document.querySelectorAll(".meta-data")
+  const target = metaParagraphs[metaParagraphs.length -1]
+
+  if (!target) return
+
+  const originalHTML = target.innerHTML
+  let modifiedHTML = originalHTML
+
+  for (const { key, className } of highlights) {
+    const regex = new RegExp(`(${key}\\s*[^<\\n]+)`, 'g')
+    modifiedHTML = modifiedHTML.replace(
+      regex,
+      `<span class="${className}">$1</span>`
+    )
+  }
+
+  target.innerHTML = modifiedHTML
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -309,4 +349,26 @@ const viewMetaData = (index: number) => {
 #searchForm, #imageBox {
   margin: 50px;
 }
+
+::v-deep(.highlight-model) {
+  color: #e91e63;
+  font-weight: bold;
+}
+::v-deep(.highlight-vae) {
+  color: #3f51b5;
+  font-weight: bold;
+}
+::v-deep(.highlight-sfgs) {
+  color: #4caf50;
+  font-weight: bold;
+}
+::v-deep(.highlight-steps) {
+  color: #ff9800;
+  font-weight: bold;
+}
+::v-deep(.highlight-denois) {
+  color: #9c27b0;
+  font-weight: bold;
+}
+
 </style>
