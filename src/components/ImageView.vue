@@ -110,6 +110,14 @@ const currentMetaData = ref<string[]>([])
 const message = useMessage()
 
 const highlights = [
+  // ComfyUI
+  { key: "CheckpointLoaderSimple:", className: "cu-checkpoint" },
+  { key: "CLIPTextEncode:", className: "cu-text" },
+  { key: "VAELoader:", className: "cu-vae" },
+  { key: "LoraLoader:", className: "cu-lora" },
+  { key: "UpscaleModelLoader:", className: "cu-up" },
+  { key: "ControlNetLoader:", className: "cu-cn" },
+  // Stable Diffusion output
   { key: "Model:", className: "highlight-model" },
   { key: "VAE:", className: "highlight-vae" },
   { key: "CFG scale:", className: "highlight-sfgs" },
@@ -332,7 +340,7 @@ const highlightMetaData = async () => {
   let modifiedHTML = originalHTML
 
   for (const { key, className } of highlights) {
-    const regex = new RegExp(`(${key}\\s*[^<\\n]+)`, 'g')
+    const regex = new RegExp(`(${key})`, 'g')
     modifiedHTML = modifiedHTML.replace(
       regex,
       `<span class="${className}">$1</span>`
@@ -348,6 +356,32 @@ const highlightMetaData = async () => {
 
 #searchForm, #imageBox {
   margin: 50px;
+}
+
+::v-deep(.cu-checkpoint) {
+  color: #e7497d;
+  font-weight: bold;
+}
+::v-deep(.cu-text) {
+  color: #fcff3a;
+  font-weight: bold;
+  background-color: #181818;
+}
+::v-deep(.cu-vae) {
+  color: #e74949;
+  font-weight: bold;
+}
+::v-deep(.cu-lora) {
+  color: #49e763;
+  font-weight: bold;
+}
+::v-deep(.cu-up) {
+  color: #49e7e7;
+  font-weight: bold;
+}
+::v-deep(.cu-cn) {
+  color: #5449e7;
+  font-weight: bold;
 }
 
 ::v-deep(.highlight-model) {

@@ -1,6 +1,15 @@
 import * as ExifReader from "exifreader"
 
 
+type Node = {
+  inputs: { [key: string]: any }
+  class_type: string;
+  _meta: {
+    title: string;
+  }
+}
+
+
 export const getMetaData = async (imageUrl: string) => {
 
   const response = await fetch(imageUrl)
@@ -15,6 +24,38 @@ export const getMetaData = async (imageUrl: string) => {
   }
   var parameter = ""
 
+  // ComfyUI output image
+  if (tags["prompt"]) {
+    parameter = tags["prompt"].value
+    const jsonData = JSON.parse(parameter) as { [key: string]: Node }
+
+    var params: string = ""
+    for (const [nodeId, node] of Object.entries(jsonData)) {
+      if (["VAEDecode", "VAEEncode", "SaveAndUploadToS3", "SaveImage", "PreviewImage", "ImageUpscaleWithModel"].includes(node.class_type)) {
+        continue
+      }
+
+      console.log(node.class_type)
+      params += `${node.class_type}: ` + "\n"
+
+      for (const [inputName, inputValue] of Object.entries(node.inputs)) {
+        if (["clip"].includes(inputName)) {
+          continue
+        }
+
+        if (node.class_type === "CLIPTextEncode" && inputName === "text") {
+          params += `　　${inputValue}` + "\n"
+
+        } else {
+          params += `　　${inputName}: ${inputValue}` + "\n"
+        }
+      }
+      params += "\n"
+    }
+    return [params]
+  }
+
+  // Stable Diffusion ouput image
   if (/\.jpg/.test(imageUrl)) {
     const userCommentValue = tags["UserComment"]?.value
     parameter = parseUserComment(userCommentValue)
