@@ -111,18 +111,19 @@ const message = useMessage()
 
 const highlights = [
   // ComfyUI
-  { key: "CheckpointLoaderSimple:", className: "cu-checkpoint" },
-  { key: "CLIPTextEncode:", className: "cu-text" },
-  { key: "VAELoader:", className: "cu-vae" },
-  { key: "LoraLoader:", className: "cu-lora" },
-  { key: "UpscaleModelLoader:", className: "cu-up" },
-  { key: "ControlNetLoader:", className: "cu-cn" },
-  // Stable Diffusion output
-  { key: "Model:", className: "highlight-model" },
-  { key: "VAE:", className: "highlight-vae" },
-  { key: "CFG scale:", className: "highlight-sfgs" },
-  { key: "Steps:", className: "highlight-steps" },
-  { key: "Denoising strength:", className: "highlight-denois" }
+  { key: "CheckpointLoaderSimple:", className: "hi-cu-checkpoint" },
+  { key: "CLIPTextEncode:", className: "hi-cu-text" },
+  { key: "VAELoader:", className: "hi-cu-vae" },
+  { key: "LoraLoader:", className: "hi-cu-lora" },
+  { key: "UpscaleModelLoader:", className: "hi-cu-up" },
+  { key: "ControlNetLoader:", className: "hi-cu-cn" },
+  // Stable Diffusion
+  { key: "Model:", className: "hi-model" },
+  { key: "VAE:", className: "hi-vae" },
+  { key: "CFG scale:", className: "hi-sfgs" },
+  { key: "Steps:", className: "hi-steps" },
+  { key: "Denoising strength:", className: "hi-denois" },
+  { key: "Lora hashes:", className: "hi-lora" }
 ]
 
 const renderToolbar = ({ nodes }: ImageRenderToolbarProps) => {
@@ -358,50 +359,56 @@ const highlightMetaData = async () => {
   margin: 50px;
 }
 
-::v-deep(.cu-checkpoint) {
+// ComfyUI
+::v-deep(.hi-cu-checkpoint) {
   color: #e7497d;
   font-weight: bold;
 }
-::v-deep(.cu-text) {
+::v-deep(.hi-cu-text) {
   color: #fcff3a;
   font-weight: bold;
   background-color: #181818;
 }
-::v-deep(.cu-vae) {
+::v-deep(.hi-cu-vae) {
   color: #e74949;
   font-weight: bold;
 }
-::v-deep(.cu-lora) {
+::v-deep(.hi-cu-lora) {
   color: #49e763;
   font-weight: bold;
 }
-::v-deep(.cu-up) {
+::v-deep(.hi-cu-up) {
   color: #49e7e7;
   font-weight: bold;
 }
-::v-deep(.cu-cn) {
+::v-deep(.hi-cu-cn) {
   color: #5449e7;
   font-weight: bold;
 }
 
-::v-deep(.highlight-model) {
+// Stable Diffusion
+::v-deep(.hi-model) {
   color: #e91e63;
   font-weight: bold;
 }
-::v-deep(.highlight-vae) {
+::v-deep(.hi-vae) {
   color: #3f51b5;
   font-weight: bold;
 }
-::v-deep(.highlight-sfgs) {
+::v-deep(.hi-sfgs) {
   color: #4caf50;
   font-weight: bold;
 }
-::v-deep(.highlight-steps) {
+::v-deep(.hi-steps) {
   color: #ff9800;
   font-weight: bold;
 }
-::v-deep(.highlight-denois) {
+::v-deep(.hi-denois) {
   color: #9c27b0;
+  font-weight: bold;
+}
+::v-deep(.hi-lora) {
+  color: #001aff;
   font-weight: bold;
 }
 
