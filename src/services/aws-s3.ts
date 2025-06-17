@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3"
+import { S3Client, GetObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 
@@ -45,6 +45,22 @@ export const listImageKeys = async (bucket: string, prefix: string, asc: boolean
   })
 
   return contents.map(item => item.Key)
+}
+
+// 画像削除リクエスト
+export const deleteS3Object = async (bucket: string, key: string): Promise<void> => {
+  const command = new DeleteObjectCommand({
+    Bucket: bucket,
+    Key: key,
+  })
+
+  try {
+    await s3.send(command)
+    console.log(`Deleted object: s3://${bucket}/${key}`)
+  } catch (error) {
+    console.error("Failed to delete S3 object:", error)
+    throw error
+  }
 }
 
 export const validatePass = (password: string) => {

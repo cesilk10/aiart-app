@@ -51,6 +51,8 @@
       </n-space>
     </n-image-group>
   </div>
+
+  <!-- meta data -->
   <n-modal v-model:show="showModal" :on-after-enter="handleAfterModalOpen">
     <n-card
       style="width: 30%; position: relative; left: 34%;"
@@ -79,15 +81,25 @@
       </template>
     </n-card>
   </n-modal>
+
+  <!-- delete confirm -->
+  <n-modal v-model:show="showDeleteModal">
+    <n-card title="" class="delete-confirm">
+      <p>Are you sure you want to delete this image?</p>
+      <n-space justify="end">
+        <n-button type="error" size="small" @click="deleteImage">Delete</n-button>
+      </n-space>
+    </n-card>
+  </n-modal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, h, onMounted, nextTick } from "vue"
 import type { ImageRenderToolbarProps } from "naive-ui"
-import { CloudDownloadOutline, ConstructOutline, CopyOutline, RefreshOutline } from "@vicons/ionicons5"
+import { CloudDownloadOutline, ConstructOutline, CopyOutline, RefreshOutline, TrashOutline } from "@vicons/ionicons5"
 import { NButton, useMessage, NIcon } from "naive-ui"
 
-import { generatePresignedUrl, listImageKeys, validatePass } from "../services/aws-s3"
+import { generatePresignedUrl, listImageKeys, validatePass, deleteS3Object } from "../services/aws-s3"
 import { getMetaData } from "../services/image-meta"
 
 
@@ -106,6 +118,8 @@ const password = ref<string>("")
 const imagesData = ref<ImageData[]>([])
 const currentImageIndex = ref<number>(0)
 const showModal = ref<boolean>(false)
+const showDeleteModal = ref<boolean>(false)
+const imageToDelete = ref<ImageData>()
 const currentMetaData = ref<string[]>([])
 const message = useMessage()
 
@@ -161,6 +175,20 @@ const renderToolbar = ({ nodes }: ImageRenderToolbarProps) => {
       },
       {
         icon: () => h(ConstructOutline)
+      }
+    ),
+    h(
+      NButton,
+      {
+        circle: true,
+        type: "error",
+        style: { marginLeft: "12px" },
+        onClick: async () => {
+          delteConfirm(currentImageIndex.value)
+        }
+      },
+      {
+        icon: () => h(TrashOutline)
       }
     ),
     nodes.close,
@@ -320,6 +348,28 @@ const viewMetaData = (index: number) => {
   currentMetaData.value = imagesData.value[index].metaData
 }
 
+const delteConfirm = (index: number) => {
+  imageToDelete.value = imagesData.value[index]
+  showDeleteModal.value = true
+}
+const deleteImage = async () => {
+  if (!imageToDelete.value) return
+  await deleteS3Object(myBucket, imageToDelete.value.urlKey)
+
+  imagesData.value = imagesData.value.filter(
+    (image) => image.urlKey !== imageToDelete.value?.urlKey
+  )
+  message.success("The image has been deleted.")
+  showDeleteModal.value = false
+
+  const icons = document.querySelectorAll(".n-image-preview-toolbar .n-base-icon")
+  if (icons.length > 0) {
+    // 最後のアイコンが「×」に対応する → クリック
+    const closeIcon = icons[icons.length - 1] as HTMLElement
+    closeIcon.click()
+  }
+}
+
 const handleAfterModalOpen = async () => {
   await nextTick()
   const mask = document.querySelector(".n-modal-mask") as HTMLElement
@@ -357,6 +407,12 @@ const highlightMetaData = async () => {
 
 #searchForm, #imageBox {
   margin: 50px;
+}
+
+.n-card.delete-confirm {
+  max-width: 350px;
+  background-color: rgb(251, 251, 180);
+  border: 4px solid rgb(255, 162, 40);
 }
 
 // ComfyUI
