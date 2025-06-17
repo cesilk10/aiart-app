@@ -27,7 +27,15 @@ export const getMetaData = async (imageUrl: string) => {
   // ComfyUI output image
   if (tags["prompt"]) {
     parameter = tags["prompt"].value
-    const jsonData = JSON.parse(parameter) as { [key: string]: Node }
+    parameter = parameter.replace(/\bNaN\b/g, "null")
+
+    var jsonData: { [key: string]: Node } = {}
+
+    try {
+      jsonData = JSON.parse(parameter) as { [key: string]: Node }
+    } catch {
+      console.log(parameter)
+    }
 
     var params: string = ""
     for (const [nodeId, node] of Object.entries(jsonData)) {
@@ -35,7 +43,6 @@ export const getMetaData = async (imageUrl: string) => {
         continue
       }
 
-      console.log(node.class_type)
       params += `${node.class_type}: ` + "\n"
 
       for (const [inputName, inputValue] of Object.entries(node.inputs)) {
