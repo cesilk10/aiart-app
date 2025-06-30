@@ -64,11 +64,11 @@ export const getMetaData = async (imageUrl: string) => {
 
   // Stable Diffusion ouput image
   if (/\.jpg/.test(imageUrl)) {
-    const userCommentValue = tags["UserComment"]?.value
+    const userCommentValue = tags["UserComment"]?.value || ""
     parameter = parseUserComment(userCommentValue)
 
   } else if (/\.png/.test(imageUrl)) {
-    parameter = tags["parameters"]?.value
+    parameter = tags["parameters"]?.value || ""
   }
 
   parameter = parameter.replace("Negative prompt:", "@@@@@")
